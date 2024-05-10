@@ -1,0 +1,3 @@
+[submodule "credential"]
+	path = credential
+	url = git@github.com:bright-room/br-cluster-credentials.git
