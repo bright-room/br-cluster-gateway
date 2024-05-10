@@ -1,0 +1,8 @@
+hostname: "br-gateway2"
+users:
+  root:
+    password: "<<Set it up yourself>>"
+  operation_user:
+    name: "bradmin"
+    password: "<<Set it up yourself>>"
+    public_key: "<<Set it up yourself>>"

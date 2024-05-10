@@ -1,0 +1,42 @@
+services:
+  network-generator:
+    image: ghcr.io/kukv/kamidata-cli:latest
+    volumes:
+      - ${PWD}/cloud-init:/generated
+      - ${PWD}/cloud-init.templates:/templates
+      - ${PWD}/values:/values
+      - ${PWD}/values-secret:/values-secret
+    command: >
+      /templates/network-config.j2
+      --input-format yaml
+      --data /values/network.yaml
+      --data /values-secret/network.yaml
+      --dst /generated/network-config
+
+  gateway1-user-data-generator:
+    image: ghcr.io/kukv/kamidata-cli:latest
+    volumes:
+      - ${PWD}/cloud-init:/generated
+      - ${PWD}/cloud-init.templates:/templates
+      - ${PWD}/values:/values
+      - ${PWD}/values-secret:/values-secret
+    command: >
+      /templates/user-data.j2
+      --input-format yaml
+      --data /values/br-gateway1.yaml
+      --data /values-secret/br-gateway1.yaml
+      --dst /generated/br-gateway1/user-data
+
+  gateway2-user-data-generator:
+    image: ghcr.io/kukv/kamidata-cli:latest
+    volumes:
+      - ${PWD}/cloud-init:/generated
+      - ${PWD}/cloud-init.templates:/templates
+      - ${PWD}/values:/values
+      - ${PWD}/values-secret:/values-secret
+    command: >
+      /templates/user-data.j2
+      --input-format yaml
+      --data /values/br-gateway2.yaml
+      --data /values-secret/br-gateway2.yaml
+      --dst /generated/br-gateway2/user-data
