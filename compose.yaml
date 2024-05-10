@@ -1,11 +1,30 @@
+x-cloud-init-generator-template: &cloud-init-generator-template
+  image: ghcr.io/kukv/kamidata-cli:latest
+  platform: linux/amd64
+  volumes:
+    - ${PWD}/cloud-init:/generated
+    - ${PWD}/cloud-init.templates:/templates
+    - ${PWD}/values:/values
+    - ${PWD}/values-secret:/values-secret
+  profiles:
+    - cloud-init
+
+x-image-build-template: &image-build-template
+  image: mkaczanowski/packer-builder-arm:latest
+  volumes:
+    - /dev:/dev
+    - ${PWD}/cloud-init:/build/cloud-init
+    - ${PWD}/packer:/build/packer
+    - ${PWD}/build/image:/build/generated
+    - ${PWD}/build/.packer_cache:/build/.packer_cache
+    - ${PWD}/build/.packer_plugins:/build/.packer_plugins
+  privileged: true
+  profiles:
+    - image-build
+
 services:
   network-generator:
-    image: ghcr.io/kukv/kamidata-cli:latest
-    volumes:
-      - ${PWD}/cloud-init:/generated
-      - ${PWD}/cloud-init.templates:/templates
-      - ${PWD}/values:/values
-      - ${PWD}/values-secret:/values-secret
+    <<: *cloud-init-generator-template
     command: >
       /templates/network-config.j2
       --input-format yaml
@@ -14,12 +33,7 @@ services:
       --dst /generated/network-config
 
   gateway1-user-data-generator:
-    image: ghcr.io/kukv/kamidata-cli:latest
-    volumes:
-      - ${PWD}/cloud-init:/generated
-      - ${PWD}/cloud-init.templates:/templates
-      - ${PWD}/values:/values
-      - ${PWD}/values-secret:/values-secret
+    <<: *cloud-init-generator-template
     command: >
       /templates/user-data.j2
       --input-format yaml
@@ -28,15 +42,37 @@ services:
       --dst /generated/br-gateway1/user-data
 
   gateway2-user-data-generator:
-    image: ghcr.io/kukv/kamidata-cli:latest
-    volumes:
-      - ${PWD}/cloud-init:/generated
-      - ${PWD}/cloud-init.templates:/templates
-      - ${PWD}/values:/values
-      - ${PWD}/values-secret:/values-secret
+    <<: *cloud-init-generator-template
     command: >
       /templates/user-data.j2
       --input-format yaml
       --data /values/br-gateway2.yaml
       --data /values-secret/br-gateway2.yaml
       --dst /generated/br-gateway2/user-data
+    profiles:
+      - cloud-init
+
+  packer-init:
+    image: mkaczanowski/packer-builder-arm:latest
+    volumes:
+      - /dev:/dev
+      - ${PWD}:/build
+    privileged: true
+    command: >
+      init -upgrade packer/build.pkr.hcl
+    profiles:
+      - packer-init
+
+  gateway1-image-build:
+    <<: *image-build-template
+    command: >
+      build --var-file=packer/br-gateway1.pkrvars.hcl packer/
+    profiles:
+      - gateway1-image-build
+
+  gateway2-image-build:
+    <<: *image-build-template
+    command: >
+      build --var-file=packer/br-gateway2.pkrvars.hcl packer/
+    profiles:
+      - gateway2-image-build
