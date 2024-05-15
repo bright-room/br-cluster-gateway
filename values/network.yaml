@@ -1,8 +1,0 @@
-networks:
-  internal:
-    gateway_ip: "172.22.10.1/24"
-  external:
-    gateway_ip: "192.168.2.50/24"
-    router_ip: "192.168.2.1"
-    ssid: "<<Set it up yourself>>"
-    hashed_password: "<<Set it up yourself>>"
