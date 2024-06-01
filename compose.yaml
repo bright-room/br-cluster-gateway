@@ -1,63 +1,39 @@
-x-cloud-init-generator-template: &cloud-init-generator-template
-  image: ghcr.io/kukv/kamidata-cli:latest
-  platform: linux/amd64
+x-cloud-config-generator-template: &cloud-config-generator-template
+  build:
+    context: ./docker/cloud-config-generator
   volumes:
-    - ${PWD}/cloud-init:/generated
-    - ${PWD}/cloud-init.templates:/templates
-    - ${PWD}/values:/values
-    - ${PWD}/values-secret:/values-secret
+    - ${PWD}/templates/cloud-config:/cloud-config-generator/templates
+    - ${PWD}/generated/cloud-config:/cloud-config-generator/generated
+    - ${PWD}/credentials/gateway:/cloud-config-generator/credentials
   profiles:
-    - cloud-init
+    - cloud-config
 
 x-image-build-template: &image-build-template
   image: mkaczanowski/packer-builder-arm:latest
   volumes:
     - /dev:/dev
+    - ${PWD}/ansible:/build/ansible
     - ${PWD}/cloud-init:/build/cloud-init
     - ${PWD}/packer:/build/packer
     - ${PWD}/build/image:/build/generated
     - ${PWD}/build/.packer_cache:/build/.packer_cache
     - ${PWD}/build/.packer_plugins:/build/.packer_plugins
   privileged: true
-  profiles:
-    - image-build
 
 services:
-  network-generator:
-    <<: *cloud-init-generator-template
-    command: >
-      /templates/network-config.j2
-      --input-format yaml
-      --data /values/network.yaml
-      --data /values-secret/network.yaml
-      --dst /generated/network-config
+  cloud-config-gateway1-generator:
+    <<: *cloud-config-generator-template
+    environment:
+      SERVER_NAME: br-gateway1
 
-  gateway1-user-data-generator:
-    <<: *cloud-init-generator-template
-    command: >
-      /templates/user-data.j2
-      --input-format yaml
-      --data /values/br-gateway1.yaml
-      --data /values-secret/br-gateway1.yaml
-      --dst /generated/br-gateway1/user-data
-
-  gateway2-user-data-generator:
-    <<: *cloud-init-generator-template
-    command: >
-      /templates/user-data.j2
-      --input-format yaml
-      --data /values/br-gateway2.yaml
-      --data /values-secret/br-gateway2.yaml
-      --dst /generated/br-gateway2/user-data
-    profiles:
-      - cloud-init
+  cloud-config-gateway2-generator:
+    <<: *cloud-config-generator-template
+    environment:
+      SERVER_NAME: br-gateway2
 
   packer-init:
     image: mkaczanowski/packer-builder-arm:latest
-    volumes:
-      - /dev:/dev
-      - ${PWD}:/build
-    privileged: true
+    <<: *image-build-template
     command: >
       init -upgrade packer/build.pkr.hcl
     profiles:
@@ -66,13 +42,13 @@ services:
   gateway1-image-build:
     <<: *image-build-template
     command: >
-      build --var-file=packer/br-gateway1.pkrvars.hcl packer/
+      build --var-file=packer/br-gateway1.pkrvars.hcl packer/ -extra-system-packages=ansible
     profiles:
       - gateway1-image-build
 
   gateway2-image-build:
     <<: *image-build-template
     command: >
-      build --var-file=packer/br-gateway2.pkrvars.hcl packer/
+      build --var-file=packer/br-gateway2.pkrvars.hcl packer/ -extra-system-packages=ansible
     profiles:
       - gateway2-image-build
