@@ -1,0 +1,26 @@
+services:
+  cloud-config-generator:
+    image: ghcr.io/bright-room/br-cloud-config-generator:0.1.0
+    platform: linux/amd64
+    environment:
+      SERVER_NAME: br-gateway1
+    volumes:
+      - ./credentials/gateway:/credentials
+      - ./generated/cloud-config:/generated
+    profiles:
+      - cloud-config
+
+  image-builder:
+    image: mkaczanowski/packer-builder-arm:latest
+    volumes:
+      - /dev:/dev
+      - ./generated/cloud-config:/build/cloud-config
+      - ./generated/.packer_cache:/build/.packer_cache
+      - ./generated/images:/build/generated
+      - ./packer:/build/packer
+      - ./scripts:/build/scripts
+    command: >
+      build --var-file=packer/br-gateway1.pkrvars.hcl packer/
+    privileged: true
+    profiles:
+      - build-image
