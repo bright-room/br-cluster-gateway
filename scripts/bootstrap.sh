@@ -8,3 +8,5 @@ bash ./provisioner-package.sh
 bash ./provisoner-docker.sh
 bash ./provisioner-forward.sh
 bash ./provisioner-firewall.sh
+
+reboot -h
