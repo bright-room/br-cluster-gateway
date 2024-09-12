@@ -1,6 +1,6 @@
 services:
   cloud-config-generator:
-    image: ghcr.io/bright-room/br-cloud-config-generator:0.1.0
+    image: ghcr.io/bright-room/br-cloud-config-generator:0.1.6
     platform: linux/amd64
     environment:
       SERVER_NAME: br-gateway1

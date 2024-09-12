@@ -35,3 +35,13 @@ cat <<'EOF' > /etc/docker/daemon.json
     "iptables": false
 }
 EOF
+
+mkdir /works
+git clone https://github.com/bright-room/br-cluster-gateway-services.git /work/br-cluster-gateway-services
+chown -R bradmin:bradmin /work/br-cluster-gateway-services
+
+docker compose build
+docker compose pull
+
+systemctl stop systemd-resolved
+systemctl disable systemd-resolved

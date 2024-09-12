@@ -21,6 +21,12 @@ build {
       "/build/scripts/provisioner-forward.sh",
       "/build/scripts/provisioner-firewall.sh",
     ]
-    destination = "/provisioner/scripts"
+    destination = "/provisioner/scripts/"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "chmod +x /provisioner/scripts/*",
+    ]
   }
 }
